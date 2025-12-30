@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Tracker | Apple Style</title>
+    <style>
+        /* --- APPLE UI DESIGN SYSTEM --- */
+        :root {
+            --bg-light: #f5f5f7;
+            --card-bg-light: rgba(255, 255, 255, 0.7);
+            --text-main-light: #1d1d1f;
+            --text-sec-light: #86868b;
+            
+            --bg-dark: #000000;
+            --card-bg-dark: rgba(28, 28, 30, 0.7);
+            --text-main-dark: #f5f5f7;
+            --text-sec-dark: #a1a1a6;
+
+            --accent-blue: #007aff;
+            --accent-green: #34c759;
+            --accent-red: #ff3b30;
+            
+            --blur: saturate(180%) blur(20px);
+            --radius: 18px;
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-main-light);
+            transition: var(--transition);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            background-image: radial-gradient(circle at 0% 0%, rgba(0,122,255,0.05) 0%, transparent 50%),
+                              radial-gradient(circle at 100% 100%, rgba(52,199,89,0.05) 0%, transparent 50%);
+        }
+
+        body.dark-mode {
+            background-color: var(--bg-dark);
+            color: var(--text-main-dark);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* --- HEADER & CONTROLS --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 5px;
+        }
+
+        h1 { font-weight: 600; font-size: 28px; letter-spacing: -0.5px; }
+
+        .btn-icon {
+            background: var(--card-bg-light);
+            backdrop-filter: var(--blur);
+            border: 1px solid rgba(0,0,0,0.05);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        .dark-mode .btn-icon { background: var(--card-bg-dark); border-color: rgba(255,255,255,0.1); }
+        .btn-icon:hover { transform: scale(1.1); }
+
+        /* --- DASHBOARD CARDS --- */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg-light);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border-radius: var(--radius);
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            transition: var(--transition);
+        }
+
+        .dark-mode .card {
+            background: var(--card-bg-dark);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .card-label { font-size: 14px; color: var(--text-sec-light); margin-bottom: 8px; font-weight: 500; }
+        .dark-mode .card-label { color: var(--text-sec-dark); }
+        .card-value { font-size: 32px; font-weight: 700; }
+        .val-income { color: var(--accent-green); }
+        .val-expense { color: var(--accent-red); }
+
+        /* --- INPUT FORM --- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.5);
+            outline: none;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .dark-mode input, .dark-mode select, .dark-mode textarea {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        input:focus { border-color: var(--accent-blue); }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: var(--transition);
+        }
+
+        .btn-primary:active { transform: scale(0.98); }
+
+        /* --- CHART SECTION --- */
+        .chart-container {
+            width: 100%;
+            height: 200px;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        canvas { width: 100%; height: 100%; }
+
+        /* --- TRANSACTION LIST --- */
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .search-bar { width: 250px; }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            animation: slideUp 0.4s ease-out;
+        }
+        .dark-mode .transaction-item { border-color: rgba(255,255,255,0.05); }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .item-info h4 { font-size: 16px; font-weight: 600; }
+        .item-info p { font-size: 13px; color: var(--text-sec-light); }
+        .item-amount { font-weight: 700; text-align: right; }
+        
+        .delete-btn {
+            color: var(--accent-red);
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 15px;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .transaction-item:hover .delete-btn { opacity: 1; }
+
+        @media (max-width: 600px) {
+            .search-bar { width: 100%; margin-top: 10px; }
+            .history-header { flex-direction: column; align-items: flex-start; }
+            .dashboard { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Walletly</h1>
+        <button class="btn-icon" onclick="toggleDarkMode()" title="Toggle Theme">
+            <svg id="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="18.36" x2="5.64" y2="16.92"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+    </header>
+
+    <div class="dashboard">
+        <div class="card">
+            <p class="card-label">Remaining Balance</p>
+            <p class="card-value" id="total-balance">₹0</p>
+        </div>
+        <div class="card">
+            <p class="card-label">Received from Papa</p>
+            <p class="card-value val-income" id="total-income">₹0</p>
+        </div>
+        <div class="card">
+            <p class="card-label">Total Spent</p>
+            <p class="card-value val-expense" id="total-expense">₹0</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <p class="card-label">Monthly Spending Insights</p>
+        <div class="chart-container">
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <p class="card-label">Add New Record</p>
+        <div class="form-grid">
+            <div>
+                <label class="card-label">Type</label>
+                <select id="type">
+                    <option value="expense">Expense (Spending)</option>
+                    <option value="income">Income (From Papa)</option>
+                </select>
+            </div>
+            <div>
+                <label class="card-label">Amount (₹)</label>
+                <input type="number" id="amount" placeholder="0.00">
+            </div>
+            <div>
+                <label class="card-label">Date</label>
+                <input type="date" id="date">
+            </div>
+            <div>
+                <label class="card-label">Category</label>
+                <select id="category">
+                    <option value="Food">Food</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Education">Education</option>
+                    <option value="Medical">Medical</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+        <textarea id="note" placeholder="Purpose / Note (e.g. Bought chemistry book)" rows="2" style="margin-top:15px"></textarea>
+        <button class="btn-primary" onclick="addTransaction()">Save Transaction</button>
+    </div>
+
+    <div class="card">
+        <div class="history-header">
+            <p class="card-label">Recent Transactions</p>
+            <input type="text" id="search" class="search-bar" placeholder="Search by purpose..." oninput="renderTransactions()">
+        </div>
+        <div id="transaction-list">
+            </div>
+    </div>
+</div>
+
+<script>
+    // --- STATE MANAGEMENT ---
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+    // Initialize date to today
+    document.getElementById('date').valueAsDate = new Date();
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        renderChart();
+    }
+
+    // Load Theme
+    if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+
+    // --- CORE LOGIC ---
+    function addTransaction() {
+        const type = document.getElementById('type').value;
+        const amount = parseFloat(document.getElementById('amount').value);
+        const date = document.getElementById('date').value;
+        const category = document.getElementById('category').value;
+        const note = document.getElementById('note').value;
+
+        if (!amount || !date) {
+            alert("Please enter amount and date");
+            return;
+        }
+
+        const transaction = {
+            id: Date.now(),
+            type,
+            amount,
+            date,
+            category,
+            note: note || category
+        };
+
+        transactions.unshift(transaction);
+        saveAndRefresh();
+        
+        // Reset fields
+        document.getElementById('amount').value = '';
+        document.getElementById('note').value = '';
+        
+        // Simple Haptic-like feedback
+        const btn = document.querySelector('.btn-primary');
+        btn.style.background = '#34c759';
+        setTimeout(() => btn.style.background = '', 500);
+    }
+
+    function deleteTransaction(id) {
+        if(confirm("Are you sure you want to delete this record?")) {
+            transactions = transactions.filter(t => t.id !== id);
+            saveAndRefresh();
+        }
+    }
+
+    function saveAndRefresh() {
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+        updateStats();
+        renderTransactions();
+        renderChart();
+    }
+
+    function updateStats() {
+        const income = transactions
+            .filter(t => t.type === 'income')
+            .reduce((sum, t) => sum + t.amount, 0);
+        
+        const expense = transactions
+            .filter(t => t.type === 'expense')
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        const balance = income - expense;
+
+        document.getElementById('total-balance').innerText = `₹${balance.toLocaleString()}`;
+        document.getElementById('total-income').innerText = `₹${income.toLocaleString()}`;
+        document.getElementById('total-expense').innerText = `₹${expense.toLocaleString()}`;
+    }
+
+    function renderTransactions() {
+        const list = document.getElementById('transaction-list');
+        const searchTerm = document.getElementById('search').value.toLowerCase();
+        
+        list.innerHTML = '';
+
+        const filtered = transactions.filter(t => 
+            t.note.toLowerCase().includes(searchTerm) || 
+            t.category.toLowerCase().includes(searchTerm)
+        );
+
+        if(filtered.length === 0) {
+            list.innerHTML = `<p style="text-align:center; padding: 20px; color: grey;">No records found</p>`;
+            return;
+        }
+
+        filtered.forEach(t => {
+            const item = document.createElement('div');
+            item.className = 'transaction-item';
+            const sign = t.type === 'income' ? '+' : '-';
+            const colorClass = t.type === 'income' ? 'val-income' : 'val-expense';
+            
+            item.innerHTML = `
+                <div class="item-info">
+                    <h4>${t.note}</h4>
+                    <p>${t.date} • ${t.category}</p>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    <div class="item-amount ${colorClass}">${sign} ₹${t.amount.toLocaleString()}</div>
+                    <span class="delete-btn" onclick="deleteTransaction(${t.id})">✕</span>
+                </div>
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    // --- CUSTOM CANVAS CHART ENGINE ---
+    function renderChart() {
+        const canvas = document.getElementById('expenseChart');
+        const ctx = canvas.getContext('2d');
+        const isDark = document.body.classList.contains('dark-mode');
+        
+        // Resize for HDPI screens
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * dpr;
+        canvas.height = canvas.offsetHeight * dpr;
+        ctx.scale(dpr, dpr);
+
+        const width = canvas.offsetWidth;
+        const height = canvas.offsetHeight;
+
+        // Prepare Data (Last 6 Months)
+        const categories = ['Food', 'Travel', 'Shopping', 'Education', 'Medical', 'Other'];
+        const data = categories.map(cat => {
+            return transactions
+                .filter(t => t.type === 'expense' && t.category === cat)
+                .reduce((sum, t) => sum + t.amount, 0);
+        });
+
+        const maxVal = Math.max(...data, 100);
+        const barWidth = (width / categories.length) - 20;
+        
+        ctx.clearRect(0, 0, width, height);
+
+        data.forEach((val, i) => {
+            const barHeight = (val / maxVal) * (height - 40);
+            const x = i * (width / categories.length) + 10;
+            const y = height - barHeight - 20;
+
+            // Draw Bar
+            ctx.fillStyle = val > 0 ? '#007aff' : (isDark ? '#333' : '#ddd');
+            
+            // Rounded Rectangle Manual Path
+            const r = 8; // corner radius
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + barWidth - r, y);
+            ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + r);
+            ctx.lineTo(x + barWidth, y + barHeight);
+            ctx.lineTo(x, y + barHeight);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+            ctx.fill();
+
+            // Labels
+            ctx.fillStyle = isDark ? '#a1a1a6' : '#86868b';
+            ctx.font = '10px -apple-system';
+            ctx.textAlign = 'center';
+            ctx.fillText(categories[i], x + barWidth/2, height - 5);
+            
+            if(val > 0) {
+                ctx.fillStyle = isDark ? '#fff' : '#000';
+                ctx.fillText(`₹${val}`, x + barWidth/2, y - 5);
+            }
+        });
+    }
+
+    // Initialize App
+    window.onload = () => {
+        saveAndRefresh();
+        // Handle window resize for chart
+        window.addEventListener('resize', renderChart);
+    };
+</script>
+
+</body>
+</html>
